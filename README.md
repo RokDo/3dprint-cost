@@ -130,6 +130,3 @@ Results show:
 
 **Wrong calculations?** Verify settings, filament data, and units
 
----
-
-**Made with ❤️ for the 3D printing community**
