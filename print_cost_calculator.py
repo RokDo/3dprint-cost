@@ -1,14 +1,32 @@
 """
 3D Print Cost Calculator
 A Windows desktop application for calculating 3D printing costs
+Modern UI with customizable currency support
 """
 
 import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog
+from tkinter import ttk, messagebox
 import json
 import os
 from datetime import datetime
 from typing import Dict, List, Optional
+
+
+# Modern color scheme (Catppuccin-inspired)
+COLORS = {
+    'bg_primary': '#1e1e2e',
+    'bg_secondary': '#2d2d44',
+    'bg_card': '#363650',
+    'accent': '#7aa2f7',
+    'accent_hover': '#5d87e5',
+    'text_primary': '#ffffff',
+    'text_secondary': '#a9b1d6',
+    'success': '#9ece6a',
+    'warning': '#e0af68',
+    'error': '#f7768e',
+    'border': '#414868'
+}
+
 
 class Filament:
     """Represents a filament spool with its properties"""
@@ -61,42 +79,41 @@ class PrinterSettings:
     def __init__(self):
         # Printer amortization
         self.printer_name = "My Printer"
-        self.printer_cost = 2000.0  # PLN
-        self.printer_lifetime_hours = 5000  # hours
+        self.printer_cost = 2000.0
+        self.printer_lifetime_hours = 5000
         
         # Energy consumption
-        self.avg_power_watts = 150  # average watts during printing
-        self.energy_cost_per_kwh = 1.0  # PLN per kWh
+        self.avg_power_watts = 150
+        self.energy_cost_per_kwh = 1.0
         
         # Machine hourly rate (alternative to detailed calculation)
-        self.hourly_rate = 5.0  # PLN per hour
+        self.hourly_rate = 5.0
         
         # Parts replacement
-        self.nozzle_cost = 10.0  # PLN
-        self.nozzle_lifetime_hours = 500  # hours
+        self.nozzle_cost = 10.0
+        self.nozzle_lifetime_hours = 500
         
         # Purge/waste percentage
-        self.purge_percentage = 10.0  # % extra material for purge/tests
+        self.purge_percentage = 10.0
         
         # Other costs
-        self.failure_rate = 5.0  # % failed prints
-        self.post_processing_cost = 0.0  # PLN per print average
+        self.failure_rate = 5.0
+        self.post_processing_cost = 0.0
         
         # Use detailed calculation or simple hourly rate
         self.use_detailed_calculation = True
+        
+        # Currency settings
+        self.currency_symbol = "PLN"
+        self.currency_position = "after"
     
     def get_machine_cost_per_hour(self) -> float:
         """Calculate machine cost per hour based on settings"""
         if not self.use_detailed_calculation:
             return self.hourly_rate
         
-        # Amortization per hour
         amortization = self.printer_cost / self.printer_lifetime_hours
-        
-        # Energy cost per hour
         energy_cost = (self.avg_power_watts / 1000) * self.energy_cost_per_kwh
-        
-        # Parts replacement per hour
         parts_cost = self.nozzle_cost / self.nozzle_lifetime_hours
         
         return amortization + energy_cost + parts_cost
@@ -122,16 +139,12 @@ class PrintJob:
     def __init__(self, filament: Filament, settings: PrinterSettings):
         self.filament = filament
         self.settings = settings
-        
-        # Print job details
         self.job_name = ""
         self.print_time_hours = 0.0
         self.filament_used_grams = 0.0
         self.support_grams = 0.0
         self.infill_percentage = 20
         self.layer_height = 0.2
-        
-        # Results
         self.material_cost = 0.0
         self.machine_cost = 0.0
         self.energy_cost = 0.0
@@ -140,36 +153,23 @@ class PrintJob:
     
     def calculate(self) -> dict:
         """Calculate all costs for this print job"""
-        # Total filament used (including supports)
         total_filament = self.filament_used_grams + self.support_grams
-        
-        # Add purge/waste percentage
         purge_multiplier = 1 + (self.settings.purge_percentage / 100)
         total_with_purge = total_filament * purge_multiplier
-        
-        # Add failure rate consideration
         failure_multiplier = 1 + (self.settings.failure_rate / 100)
         final_filament = total_with_purge * failure_multiplier
         
-        # Material cost
         self.material_cost = final_filament * self.filament.price_per_gram
-        
-        # Machine cost
         self.machine_cost = self.print_time_hours * self.settings.get_machine_cost_per_hour()
         
-        # Energy cost (only if using detailed calculation)
         if self.settings.use_detailed_calculation:
             self.energy_cost = self.settings.get_energy_cost(self.print_time_hours)
         else:
             self.energy_cost = 0.0
         
-        # Post processing
         post_process = self.settings.post_processing_cost
-        
-        # Total
         self.total_cost = self.material_cost + self.machine_cost + self.energy_cost + post_process
         
-        # Detailed breakdown
         self.breakdown = {
             'base_filament_grams': total_filament,
             'with_purge_grams': total_with_purge,
@@ -187,16 +187,115 @@ class PrintJob:
         return self.breakdown
 
 
-class FilamentDialog(simpledialog.Toplevel):
-    """Dialog for adding/editing filaments"""
-    def __init__(self, parent, title: str, filament: Optional[Filament] = None):
+class ModernStyle:
+    """Apply modern styling to tkinter widgets"""
+    
+    @staticmethod
+    def apply_theme(root):
+        """Apply modern theme to the application"""
+        style = ttk.Style()
+        style.theme_use('clam')
+        
+        # Configure colors
+        style.configure('.', 
+                       background=COLORS['bg_primary'],
+                       foreground=COLORS['text_primary'],
+                       font=('Segoe UI', 10))
+        
+        style.configure('TFrame', background=COLORS['bg_primary'])
+        style.configure('TLabel', background=COLORS['bg_primary'], 
+                       foreground=COLORS['text_primary'],
+                       font=('Segoe UI', 10))
+        style.configure('Header.TLabel', font=('Segoe UI', 12, 'bold'),
+                       foreground=COLORS['accent'])
+        style.configure('Title.TLabel', font=('Segoe UI', 16, 'bold'),
+                       foreground=COLORS['text_primary'])
+        style.configure('Card.TFrame', background=COLORS['bg_card'])
+        
+        style.configure('TButton', 
+                       background=COLORS['accent'],
+                       foreground=COLORS['text_primary'],
+                       font=('Segoe UI', 10, 'bold'),
+                       padding=(15, 8),
+                       borderwidth=0)
+        style.map('TButton',
+                 background=[('active', COLORS['accent_hover']),
+                            ('pressed', COLORS['accent'])])
+        
+        style.configure('TLabelframe', 
+                       background=COLORS['bg_secondary'],
+                       foreground=COLORS['text_primary'],
+                       font=('Segoe UI', 11, 'bold'))
+        style.configure('TLabelframe.Label',
+                       background=COLORS['bg_secondary'],
+                       foreground=COLORS['accent'],
+                       font=('Segoe UI', 11, 'bold'))
+        
+        style.configure('TEntry',
+                       fieldbackground=COLORS['bg_secondary'],
+                       foreground=COLORS['text_primary'],
+                       insertcolor=COLORS['text_primary'],
+                       padding=5)
+        
+        style.configure('TCOMBobox',
+                       fieldbackground=COLORS['bg_secondary'],
+                       foreground=COLORS['text_primary'],
+                       arrowcolor=COLORS['accent'])
+        style.map('TCombobox',
+                 selectbackground=[('focus', COLORS['accent'])],
+                 selectforeground=[('focus', COLORS['text_primary'])])
+        
+        style.configure('TNotebook', 
+                       background=COLORS['bg_secondary'],
+                       tabmargins=[2, 2, 2, 0])
+        style.configure('TNotebook.Tab',
+                       background=COLORS['bg_secondary'],
+                       foreground=COLORS['text_secondary'],
+                       padding=[15, 8],
+                       font=('Segoe UI', 10))
+        style.map('TNotebook.Tab',
+                 background=[('selected', COLORS['bg_card'])],
+                 foreground=[('selected', COLORS['text_primary'])])
+        
+        style.configure('Treeview',
+                       background=COLORS['bg_secondary'],
+                       foreground=COLORS['text_primary'],
+                       fieldbackground=COLORS['bg_secondary'],
+                       rowheight=28,
+                       font=('Segoe UI', 10))
+        style.configure('Treeview.Heading',
+                       background=COLORS['bg_card'],
+                       foreground=COLORS['accent'],
+                       font=('Segoe UI', 10, 'bold'))
+        style.map('Treeview',
+                 background=[('selected', COLORS['accent'])],
+                 foreground=[('selected', COLORS['text_primary'])])
+        
+        style.configure('Vertical.TScrollbar',
+                       background=COLORS['bg_card'],
+                       troughcolor=COLORS['bg_secondary'],
+                       borderwidth=0,
+                       arrowcolor=COLORS['text_secondary'])
+        
+        # Configure root window
+        root.configure(bg=COLORS['bg_primary'])
+
+
+class FilamentDialog(tk.Toplevel):
+    """Modern dialog for adding/editing filaments"""
+    def __init__(self, parent, title: str, filament: Optional[Filament] = None, currency_symbol: str = "PLN"):
         super().__init__(parent)
         self.title(title)
         self.filament = filament
         self.result = None
+        self.currency_symbol = currency_symbol
         
         self.transient(parent)
         self.grab_set()
+        self.resizable(False, False)
+        
+        ModernStyle.apply_theme(self)
+        self.configure(bg=COLORS['bg_primary'])
         
         self.create_widgets()
         
@@ -205,55 +304,63 @@ class FilamentDialog(simpledialog.Toplevel):
         
         self.protocol("WM_DELETE_WINDOW", self.cancel)
         self.center_window()
+        self.wait_visibility()
+        self.focus_force()
     
     def center_window(self):
         """Center dialog on screen"""
         self.update_idletasks()
-        width = 400
-        height = 350
+        width = 420
+        height = 380
         x = (self.winfo_screenwidth() // 2) - (width // 2)
         y = (self.winfo_screenheight() // 2) - (height // 2)
         self.geometry(f'{width}x{height}+{x}+{y}')
-        self.resizable(False, False)
     
     def create_widgets(self):
         """Create dialog widgets"""
-        main_frame = ttk.Frame(self, padding="20")
+        main_frame = ttk.Frame(self, padding="25")
         main_frame.pack(fill=tk.BOTH, expand=True)
         
+        # Title
+        title_label = ttk.Label(main_frame, text="Filament Details", style='Title.TLabel')
+        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20))
+        
         # Name
-        ttk.Label(main_frame, text="Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text="Name:").grid(row=1, column=0, sticky=tk.W, pady=8)
         self.name_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.name_var, width=30).grid(row=0, column=1, pady=5)
+        name_entry = ttk.Entry(main_frame, textvariable=self.name_var, width=35)
+        name_entry.grid(row=1, column=1, pady=8, sticky='ew')
         
         # Material
-        ttk.Label(main_frame, text="Material:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text="Material:").grid(row=2, column=0, sticky=tk.W, pady=8)
         self.material_var = tk.StringVar()
-        material_combo = ttk.Combobox(main_frame, textvariable=self.material_var, width=27, state='readonly')
+        material_combo = ttk.Combobox(main_frame, textvariable=self.material_var, width=32, state='readonly')
         material_combo['values'] = ['PLA', 'PETG', 'ABS', 'ASA', 'TPU', 'NYLON', 'PC', 'PVA', 'HIPS', 'OTHER']
-        material_combo.grid(row=1, column=1, pady=5)
+        material_combo.grid(row=2, column=1, pady=8, sticky='ew')
         
         # Color
-        ttk.Label(main_frame, text="Color:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text="Color:").grid(row=3, column=0, sticky=tk.W, pady=8)
         self.color_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.color_var, width=30).grid(row=2, column=1, pady=5)
+        ttk.Entry(main_frame, textvariable=self.color_var, width=35).grid(row=3, column=1, pady=8, sticky='ew')
         
         # Weight
-        ttk.Label(main_frame, text="Weight (grams):").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=f"Weight (grams):").grid(row=4, column=0, sticky=tk.W, pady=8)
         self.weight_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.weight_var, width=30).grid(row=3, column=1, pady=5)
+        ttk.Entry(main_frame, textvariable=self.weight_var, width=35).grid(row=4, column=1, pady=8, sticky='ew')
         
         # Cost
-        ttk.Label(main_frame, text="Cost (PLN):").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=f"Cost ({self.currency_symbol}):").grid(row=5, column=0, sticky=tk.W, pady=8)
         self.cost_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.cost_var, width=30).grid(row=4, column=1, pady=5)
+        ttk.Entry(main_frame, textvariable=self.cost_var, width=35).grid(row=5, column=1, pady=8, sticky='ew')
         
         # Buttons
         btn_frame = ttk.Frame(main_frame)
-        btn_frame.grid(row=5, column=0, columnspan=2, pady=20)
+        btn_frame.grid(row=6, column=0, columnspan=2, pady=25)
         
-        ttk.Button(btn_frame, text="Save", command=self.save).pack(side=tk.LEFT, padx=10)
-        ttk.Button(btn_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=10)
+        save_btn = ttk.Button(btn_frame, text="Save", command=self.save)
+        save_btn.pack(side=tk.LEFT, padx=10)
+        cancel_btn = ttk.Button(btn_frame, text="Cancel", command=self.cancel)
+        cancel_btn.pack(side=tk.LEFT, padx=10)
     
     def populate(self, filament: Filament):
         """Populate fields with existing filament data"""
@@ -269,12 +376,13 @@ class FilamentDialog(simpledialog.Toplevel):
             name = self.name_var.get().strip()
             material = self.material_var.get().strip()
             color = self.color_var.get().strip()
-            weight = float(self.weight_var.get())
-            cost = float(self.cost_var.get())
             
             if not name or not material or not color:
                 messagebox.showerror("Error", "All fields are required", parent=self)
                 return
+            
+            weight = float(self.weight_var.get())
+            cost = float(self.cost_var.get())
             
             if weight <= 0 or cost <= 0:
                 messagebox.showerror("Error", "Weight and cost must be positive", parent=self)
@@ -297,8 +405,8 @@ class FilamentDialog(simpledialog.Toplevel):
         self.destroy()
 
 
-class SettingsDialog(simpledialog.Toplevel):
-    """Dialog for printer settings"""
+class SettingsDialog(tk.Toplevel):
+    """Modern dialog for printer settings"""
     def __init__(self, parent, title: str, settings: PrinterSettings):
         super().__init__(parent)
         self.title(title)
@@ -307,115 +415,160 @@ class SettingsDialog(simpledialog.Toplevel):
         
         self.transient(parent)
         self.grab_set()
+        self.resizable(False, False)
+        
+        ModernStyle.apply_theme(self)
+        self.configure(bg=COLORS['bg_primary'])
         
         self.create_widgets()
         self.populate()
         
         self.protocol("WM_DELETE_WINDOW", self.cancel)
         self.center_window()
+        self.wait_visibility()
+        self.focus_force()
     
     def center_window(self):
         """Center dialog on screen"""
         self.update_idletasks()
-        width = 500
-        height = 550
+        width = 550
+        height = 580
         x = (self.winfo_screenwidth() // 2) - (width // 2)
         y = (self.winfo_screenheight() // 2) - (height // 2)
         self.geometry(f'{width}x{height}+{x}+{y}')
     
     def create_widgets(self):
         """Create dialog widgets"""
-        main_frame = ttk.Frame(self, padding="15")
+        main_frame = ttk.Frame(self, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Title
+        title_label = ttk.Label(main_frame, text="Printer Settings", style='Title.TLabel')
+        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 15))
         
         # Create notebook for tabs
         notebook = ttk.Notebook(main_frame)
-        notebook.pack(fill=tk.BOTH, expand=True)
+        notebook.grid(row=1, column=0, columnspan=2, sticky='nsew', pady=10)
         
         # Tab 1: Printer
-        printer_frame = ttk.Frame(notebook, padding="10")
-        notebook.add(printer_frame, text="Printer")
+        printer_frame = ttk.Frame(notebook, padding="15")
+        notebook.add(printer_frame, text="  Printer  ")
         
         row = 0
-        ttk.Label(printer_frame, text="Printer Name:").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(printer_frame, text="Printer Name:").grid(row=row, column=0, sticky=tk.W, pady=8)
         self.printer_name_var = tk.StringVar()
-        ttk.Entry(printer_frame, textvariable=self.printer_name_var, width=30).grid(row=row, column=1, pady=3)
+        ttk.Entry(printer_frame, textvariable=self.printer_name_var, width=35).grid(row=row, column=1, pady=8)
         
         row += 1
-        ttk.Label(printer_frame, text="Printer Cost (PLN):").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(printer_frame, text=f"Printer Cost:").grid(row=row, column=0, sticky=tk.W, pady=8)
         self.printer_cost_var = tk.StringVar()
-        ttk.Entry(printer_frame, textvariable=self.printer_cost_var, width=30).grid(row=row, column=1, pady=3)
+        ttk.Entry(printer_frame, textvariable=self.printer_cost_var, width=35).grid(row=row, column=1, pady=8)
         
         row += 1
-        ttk.Label(printer_frame, text="Lifetime (hours):").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(printer_frame, text="Lifetime (hours):").grid(row=row, column=0, sticky=tk.W, pady=8)
         self.lifetime_var = tk.StringVar()
-        ttk.Entry(printer_frame, textvariable=self.lifetime_var, width=30).grid(row=row, column=1, pady=3)
+        ttk.Entry(printer_frame, textvariable=self.lifetime_var, width=35).grid(row=row, column=1, pady=8)
         
         row += 1
-        ttk.Label(printer_frame, text="Simple Hourly Rate (PLN):").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(printer_frame, text="Simple Hourly Rate:").grid(row=row, column=0, sticky=tk.W, pady=8)
         self.hourly_rate_var = tk.StringVar()
-        ttk.Entry(printer_frame, textvariable=self.hourly_rate_var, width=30).grid(row=row, column=1, pady=3)
+        ttk.Entry(printer_frame, textvariable=self.hourly_rate_var, width=35).grid(row=row, column=1, pady=8)
         
         row += 1
         self.use_detailed_var = tk.BooleanVar()
         ttk.Checkbutton(printer_frame, text="Use detailed calculation (amortization + energy + parts)",
-                       variable=self.use_detailed_var).grid(row=row, column=0, columnspan=2, sticky=tk.W, pady=5)
+                       variable=self.use_detailed_var).grid(row=row, column=0, columnspan=2, sticky=tk.W, pady=10)
         
         # Tab 2: Energy & Parts
-        energy_frame = ttk.Frame(notebook, padding="10")
-        notebook.add(energy_frame, text="Energy & Parts")
+        energy_frame = ttk.Frame(notebook, padding="15")
+        notebook.add(energy_frame, text="  Energy & Parts  ")
         
         row = 0
-        ttk.Label(energy_frame, text="Avg Power (Watts):").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(energy_frame, text="Avg Power (Watts):").grid(row=row, column=0, sticky=tk.W, pady=8)
         self.power_var = tk.StringVar()
-        ttk.Entry(energy_frame, textvariable=self.power_var, width=30).grid(row=row, column=1, pady=3)
+        ttk.Entry(energy_frame, textvariable=self.power_var, width=35).grid(row=row, column=1, pady=8)
         
         row += 1
-        ttk.Label(energy_frame, text="Energy Cost (PLN/kWh):").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(energy_frame, text=f"Energy Cost (/kWh):").grid(row=row, column=0, sticky=tk.W, pady=8)
         self.energy_cost_var = tk.StringVar()
-        ttk.Entry(energy_frame, textvariable=self.energy_cost_var, width=30).grid(row=row, column=1, pady=3)
+        ttk.Entry(energy_frame, textvariable=self.energy_cost_var, width=35).grid(row=row, column=1, pady=8)
         
         row += 1
-        ttk.Separator(energy_frame, orient='horizontal').grid(row=row, column=0, columnspan=2, sticky='ew', pady=10)
+        ttk.Separator(energy_frame, orient='horizontal').grid(row=row, column=0, columnspan=2, sticky='ew', pady=15)
         
         row += 1
-        ttk.Label(energy_frame, text="Nozzle Cost (PLN):").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(energy_frame, text="Nozzle Cost:").grid(row=row, column=0, sticky=tk.W, pady=8)
         self.nozzle_cost_var = tk.StringVar()
-        ttk.Entry(energy_frame, textvariable=self.nozzle_cost_var, width=30).grid(row=row, column=1, pady=3)
+        ttk.Entry(energy_frame, textvariable=self.nozzle_cost_var, width=35).grid(row=row, column=1, pady=8)
         
         row += 1
-        ttk.Label(energy_frame, text="Nozzle Lifetime (hours):").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(energy_frame, text="Nozzle Lifetime (hours):").grid(row=row, column=0, sticky=tk.W, pady=8)
         self.nozzle_lifetime_var = tk.StringVar()
-        ttk.Entry(energy_frame, textvariable=self.nozzle_lifetime_var, width=30).grid(row=row, column=1, pady=3)
+        ttk.Entry(energy_frame, textvariable=self.nozzle_lifetime_var, width=35).grid(row=row, column=1, pady=8)
         
         # Tab 3: Waste & Other
-        waste_frame = ttk.Frame(notebook, padding="10")
-        notebook.add(waste_frame, text="Waste & Other")
+        waste_frame = ttk.Frame(notebook, padding="15")
+        notebook.add(waste_frame, text="  Waste & Other  ")
         
         row = 0
-        ttk.Label(waste_frame, text="Purge/Waste (%):").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(waste_frame, text="Purge/Waste (%):").grid(row=row, column=0, sticky=tk.W, pady=8)
         self.purge_var = tk.StringVar()
-        ttk.Entry(waste_frame, textvariable=self.purge_var, width=30).grid(row=row, column=1, pady=3)
-        ttk.Label(waste_frame, text="%").grid(row=row, column=2, sticky=tk.W, pady=3)
+        ttk.Entry(waste_frame, textvariable=self.purge_var, width=35).grid(row=row, column=1, pady=8)
+        ttk.Label(waste_frame, text="%").grid(row=row, column=2, sticky=tk.W, pady=8)
         
         row += 1
-        ttk.Label(waste_frame, text="Failure Rate (%):").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(waste_frame, text="Failure Rate (%):").grid(row=row, column=0, sticky=tk.W, pady=8)
         self.failure_var = tk.StringVar()
-        ttk.Entry(waste_frame, textvariable=self.failure_var, width=30).grid(row=row, column=1, pady=3)
-        ttk.Label(waste_frame, text="%").grid(row=row, column=2, sticky=tk.W, pady=3)
+        ttk.Entry(waste_frame, textvariable=self.failure_var, width=35).grid(row=row, column=1, pady=8)
+        ttk.Label(waste_frame, text="%").grid(row=row, column=2, sticky=tk.W, pady=8)
         
         row += 1
-        ttk.Label(waste_frame, text="Post-processing Cost (PLN):").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(waste_frame, text=f"Post-processing Cost:").grid(row=row, column=0, sticky=tk.W, pady=8)
         self.post_process_var = tk.StringVar()
-        ttk.Entry(waste_frame, textvariable=self.post_process_var, width=30).grid(row=row, column=1, pady=3)
+        ttk.Entry(waste_frame, textvariable=self.post_process_var, width=35).grid(row=row, column=1, pady=8)
+        
+        # Tab 4: Currency
+        currency_frame = ttk.Frame(notebook, padding="15")
+        notebook.add(currency_frame, text="  Currency  ")
+        
+        row = 0
+        ttk.Label(currency_frame, text="Currency Symbol:").grid(row=row, column=0, sticky=tk.W, pady=8)
+        self.currency_symbol_var = tk.StringVar()
+        ttk.Entry(currency_frame, textvariable=self.currency_symbol_var, width=35).grid(row=row, column=1, pady=8)
+        
+        row += 1
+        ttk.Label(currency_frame, text="Symbol Position:").grid(row=row, column=0, sticky=tk.W, pady=8)
+        self.currency_position_var = tk.StringVar()
+        position_combo = ttk.Combobox(currency_frame, textvariable=self.currency_position_var, width=32, state='readonly')
+        position_combo['values'] = ['before', 'after']
+        position_combo.grid(row=row, column=1, pady=8, sticky='ew')
+        
+        row += 1
+        ttk.Label(currency_frame, text="Examples:", style='Header.TLabel').grid(row=row, column=0, columnspan=2, sticky=tk.W, pady=(15, 5))
+        self.example_label = ttk.Label(currency_frame, text="", foreground=COLORS['text_secondary'])
+        self.example_label.grid(row=row+1, column=0, columnspan=2, sticky=tk.W, pady=5)
+        self.update_example()
+        
+        # Bind to update example
+        self.currency_symbol_var.trace_add('write', lambda *args: self.update_example())
+        self.currency_position_var.trace_add('write', lambda *args: self.update_example())
         
         # Buttons
         btn_frame = ttk.Frame(main_frame)
-        btn_frame.pack(pady=10)
+        btn_frame.grid(row=2, column=0, columnspan=2, pady=20)
         
         ttk.Button(btn_frame, text="Save", command=self.save).pack(side=tk.LEFT, padx=10)
         ttk.Button(btn_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=10)
         ttk.Button(btn_frame, text="Reset to Defaults", command=self.reset_defaults).pack(side=tk.RIGHT, padx=10)
+    
+    def update_example(self):
+        """Update currency example display"""
+        symbol = self.currency_symbol_var.get() or "PLN"
+        position = self.currency_position_var.get() or "after"
+        if position == "before":
+            self.example_label.config(text=f"{symbol} 100.00  |  {symbol}1,234.56")
+        else:
+            self.example_label.config(text=f"100.00 {symbol}  |  1,234.56 {symbol}")
     
     def populate(self):
         """Populate fields with current settings"""
@@ -432,6 +585,9 @@ class SettingsDialog(simpledialog.Toplevel):
         self.purge_var.set(str(s.purge_percentage))
         self.failure_var.set(str(s.failure_rate))
         self.post_process_var.set(str(s.post_processing_cost))
+        self.currency_symbol_var.set(s.currency_symbol)
+        self.currency_position_var.set(s.currency_position)
+        self.update_example()
     
     def reset_defaults(self):
         """Reset to default values"""
@@ -447,6 +603,9 @@ class SettingsDialog(simpledialog.Toplevel):
         self.purge_var.set(str(defaults.purge_percentage))
         self.failure_var.set(str(defaults.failure_rate))
         self.post_process_var.set(str(defaults.post_processing_cost))
+        self.currency_symbol_var.set(defaults.currency_symbol)
+        self.currency_position_var.set(defaults.currency_position)
+        self.update_example()
     
     def save(self):
         """Validate and save settings"""
@@ -464,13 +623,15 @@ class SettingsDialog(simpledialog.Toplevel):
             self.result.purge_percentage = float(self.purge_var.get())
             self.result.failure_rate = float(self.failure_var.get())
             self.result.post_processing_cost = float(self.post_process_var.get())
+            self.result.currency_symbol = self.currency_symbol_var.get().strip() or "PLN"
+            self.result.currency_position = self.currency_position_var.get().strip() or "after"
             
             if self.result.printer_cost <= 0 or self.result.printer_lifetime_hours <= 0:
                 raise ValueError("Invalid values")
             
             self.destroy()
         except ValueError:
-            messagebox.showerror("Error", "Invalid number format. Please check all fields.", parent=self)
+            messagebox.showerror("Error", "Please enter valid numeric values", parent=self)
     
     def cancel(self):
         """Cancel dialog"""
@@ -479,44 +640,72 @@ class SettingsDialog(simpledialog.Toplevel):
 
 
 class CostCalculatorApp:
-    """Main application class"""
+    """Main application class with modern UI"""
     
     DATA_FILE = "print_cost_data.json"
     
     def __init__(self, root):
         self.root = root
         self.root.title("3D Print Cost Calculator")
-        self.root.geometry("1000x700")
+        self.root.geometry("1100x750")
+        self.root.minsize(900, 600)
         
         # Data
         self.filaments: List[Filament] = []
         self.settings = PrinterSettings()
         self.current_job: Optional[PrintJob] = None
         
-        # Load saved data
-        self.load_data()
+        # Apply modern theme
+        ModernStyle.apply_theme(root)
         
-        # Setup UI
+        # Setup UI first (before loading data to avoid status_label error)
         self.setup_ui()
+        
+        # Load saved data after UI is ready
+        self.load_data()
         
         # Bind close event
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
     
     def setup_ui(self):
         """Setup the user interface"""
-        # Main container
-        main_container = ttk.Frame(self.root)
-        main_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        # Main container with padding
+        main_container = ttk.Frame(self.root, padding="15")
+        main_container.pack(fill=tk.BOTH, expand=True)
         
-        # Left panel - Filaments and Settings
-        left_panel = ttk.LabelFrame(main_container, text="Filaments", padding="10")
+        # Header
+        header_frame = ttk.Frame(main_container)
+        header_frame.pack(fill=tk.X, pady=(0, 15))
+        
+        title_label = ttk.Label(header_frame, text="🖨️ 3D Print Cost Calculator", style='Title.TLabel')
+        title_label.pack(side=tk.LEFT)
+        
+        settings_btn = ttk.Button(header_frame, text="⚙️ Settings", command=self.open_settings)
+        settings_btn.pack(side=tk.RIGHT)
+        
+        # Content area - split into left and right panels
+        content_frame = ttk.Frame(main_container)
+        content_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Left panel - Filaments
+        left_panel = ttk.LabelFrame(content_frame, text="Filaments", padding="12")
         left_panel.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
         
         # Filament listbox with scrollbar
         list_frame = ttk.Frame(left_panel)
         list_frame.pack(fill=tk.BOTH, expand=True)
         
-        self.filament_listbox = tk.Listbox(list_frame, width=35, height=15)
+        self.filament_listbox = tk.Listbox(list_frame, 
+                                           width=35, 
+                                           height=18,
+                                           bg=COLORS['bg_secondary'],
+                                           fg=COLORS['text_primary'],
+                                           selectbackground=COLORS['accent'],
+                                           selectforeground=COLORS['text_primary'],
+                                           activestyle='none',
+                                           font=('Segoe UI', 10),
+                                           borderwidth=0,
+                                           highlightthickness=0)
         scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.filament_listbox.yview)
         self.filament_listbox.configure(yscrollcommand=scrollbar.set)
         
@@ -524,66 +713,81 @@ class CostCalculatorApp:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
         # Filament buttons
-        fil_btn_frame = ttk.Frame(left_panel)
-        fil_btn_frame.pack(fill=tk.X, pady=(10, 0))
+        filament_btn_frame = ttk.Frame(left_panel)
+        filament_btn_frame.pack(fill=tk.X, pady=(10, 0))
         
-        ttk.Button(fil_btn_frame, text="Add Filament", command=self.add_filament).pack(side=tk.LEFT, padx=2)
-        ttk.Button(fil_btn_frame, text="Edit", command=self.edit_filament).pack(side=tk.LEFT, padx=2)
-        ttk.Button(fil_btn_frame, text="Remove", command=self.remove_filament).pack(side=tk.LEFT, padx=2)
-        
-        # Selected filament info
-        self.filament_info_label = ttk.Label(left_panel, text="", wraplength=250)
-        self.filament_info_label.pack(fill=tk.X, pady=(10, 0))
-        
-        # Settings button
-        ttk.Button(left_panel, text="⚙ Printer Settings", command=self.open_settings).pack(fill=tk.X, pady=(10, 0))
+        add_btn = ttk.Button(filament_btn_frame, text="+ Add Filament", command=self.add_filament)
+        add_btn.pack(side=tk.LEFT, padx=(0, 5))
+        edit_btn = ttk.Button(filament_btn_frame, text="✏️ Edit", command=self.edit_filament)
+        edit_btn.pack(side=tk.LEFT, padx=5)
+        delete_btn = ttk.Button(filament_btn_frame, text="🗑️ Delete", command=self.delete_filament)
+        delete_btn.pack(side=tk.LEFT, padx=5)
         
         # Right panel - Calculator
-        right_panel = ttk.LabelFrame(main_container, text="Print Job Calculator", padding="10")
-        right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+        right_panel = ttk.LabelFrame(content_frame, text="Cost Calculator", padding="12")
+        right_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
-        # Input section
-        input_frame = ttk.LabelFrame(right_panel, text="Print Details", padding="10")
+        # Input frame
+        input_frame = ttk.Frame(right_panel)
         input_frame.pack(fill=tk.X, pady=(0, 10))
         
-        # Grid layout for inputs
-        row = 0
-        ttk.Label(input_frame, text="Job Name:").grid(row=row, column=0, sticky=tk.W, pady=5)
+        # Job name
+        job_frame = ttk.Frame(input_frame)
+        job_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(job_frame, text="Job Name:").pack(side=tk.LEFT)
         self.job_name_var = tk.StringVar()
-        ttk.Entry(input_frame, textvariable=self.job_name_var, width=30).grid(row=row, column=1, pady=5)
+        ttk.Entry(job_frame, textvariable=self.job_name_var, width=40).pack(side=tk.LEFT, padx=10)
         
-        row += 1
-        ttk.Label(input_frame, text="Select Filament:").grid(row=row, column=0, sticky=tk.W, pady=5)
-        self.filament_select_var = tk.StringVar()
-        self.filament_combo = ttk.Combobox(input_frame, textvariable=self.filament_select_var, width=27, state='readonly')
-        self.filament_combo.grid(row=row, column=1, pady=5)
-        self.filament_combo.bind('<<ComboboxSelected>>', self.on_filament_selected)
+        # Filament selection
+        filament_sel_frame = ttk.Frame(input_frame)
+        filament_sel_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(filament_sel_frame, text="Filament:").pack(side=tk.LEFT)
+        self.filament_var = tk.StringVar()
+        self.filament_combo = ttk.Combobox(filament_sel_frame, textvariable=self.filament_var, width=37, state='readonly')
+        self.filament_combo.pack(side=tk.LEFT, padx=10)
         
-        row += 1
-        ttk.Label(input_frame, text="Print Time (hours):").grid(row=row, column=0, sticky=tk.W, pady=5)
-        self.print_time_var = tk.StringVar(value="0")
-        ttk.Entry(input_frame, textvariable=self.print_time_var, width=30).grid(row=row, column=1, pady=5)
+        # Print time and filament used
+        details_frame = ttk.Frame(input_frame)
+        details_frame.pack(fill=tk.X, pady=10)
         
-        row += 1
-        ttk.Label(input_frame, text="Filament Used (grams):").grid(row=row, column=0, sticky=tk.W, pady=5)
-        self.filament_used_var = tk.StringVar(value="0")
-        ttk.Entry(input_frame, textvariable=self.filament_used_var, width=30).grid(row=row, column=1, pady=5)
+        time_frame = ttk.Frame(details_frame)
+        time_frame.pack(side=tk.LEFT, padx=(0, 20))
+        ttk.Label(time_frame, text="Print Time (hours):").pack(anchor=tk.W)
+        self.time_var = tk.StringVar(value="0")
+        ttk.Entry(time_frame, textvariable=self.time_var, width=15).pack(anchor=tk.W, pady=3)
         
-        row += 1
-        ttk.Label(input_frame, text="Support Material (grams):").grid(row=row, column=0, sticky=tk.W, pady=5)
+        weight_frame = ttk.Frame(details_frame)
+        weight_frame.pack(side=tk.LEFT)
+        ttk.Label(weight_frame, text="Filament Used (g):").pack(anchor=tk.W)
+        self.weight_var = tk.StringVar(value="0")
+        ttk.Entry(weight_frame, textvariable=self.weight_var, width=15).pack(anchor=tk.W, pady=3)
+        
+        support_frame = ttk.Frame(details_frame)
+        support_frame.pack(side=tk.LEFT, padx=(20, 0))
+        ttk.Label(support_frame, text="Supports (g):").pack(anchor=tk.W)
         self.support_var = tk.StringVar(value="0")
-        ttk.Entry(input_frame, textvariable=self.support_var, width=30).grid(row=row, column=1, pady=5)
+        ttk.Entry(support_frame, textvariable=self.support_var, width=15).pack(anchor=tk.W, pady=3)
         
         # Calculate button
         calc_btn = ttk.Button(input_frame, text="📊 Calculate Cost", command=self.calculate_cost)
-        calc_btn.grid(row=row+1, column=0, columnspan=2, pady=15)
+        calc_btn.pack(pady=15)
         
-        # Results section
-        results_frame = ttk.LabelFrame(right_panel, text="Cost Breakdown", padding="10")
+        # Results frame
+        results_frame = ttk.LabelFrame(right_panel, text="Results", padding="12")
         results_frame.pack(fill=tk.BOTH, expand=True)
         
         # Results text area
-        self.results_text = tk.Text(results_frame, height=18, width=60, wrap=tk.WORD, font=('Consolas', 10))
+        self.results_text = tk.Text(results_frame, 
+                                   wrap=tk.WORD, 
+                                   width=50, 
+                                   height=15,
+                                   bg=COLORS['bg_secondary'],
+                                   fg=COLORS['text_primary'],
+                                   font=('Consolas', 10),
+                                   borderwidth=0,
+                                   highlightthickness=0,
+                                   padx=10,
+                                   pady=10)
         results_scrollbar = ttk.Scrollbar(results_frame, orient=tk.VERTICAL, command=self.results_text.yview)
         self.results_text.configure(yscrollcommand=results_scrollbar.set)
         
@@ -594,27 +798,45 @@ class CostCalculatorApp:
         status_frame = ttk.Frame(self.root)
         status_frame.pack(fill=tk.X, side=tk.BOTTOM)
         
-        self.status_label = ttk.Label(status_frame, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
-        self.status_label.pack(fill=tk.X, padx=10, pady=5)
+        self.status_label = ttk.Label(status_frame, 
+                                     text="Ready", 
+                                     relief=tk.FLAT,
+                                     anchor=tk.W,
+                                     foreground=COLORS['text_secondary'],
+                                     font=('Segoe UI', 9))
+        self.status_label.pack(fill=tk.X, padx=15, pady=8)
         
         # Update filament list
         self.update_filament_list()
+    
+    def format_currency(self, amount: float) -> str:
+        """Format amount with currency symbol"""
+        symbol = self.settings.currency_symbol
+        position = self.settings.currency_position
+        
+        formatted = f"{amount:.2f}"
+        
+        if position == "before":
+            return f"{symbol}{formatted}"
+        else:
+            return f"{formatted} {symbol}"
     
     def update_filament_list(self):
         """Update the filament listbox and combo box"""
         self.filament_listbox.delete(0, tk.END)
         self.filament_combo['values'] = []
         
-        for i, filament in enumerate(self.filaments):
+        for filament in self.filaments:
             display = f"{filament.name} - {filament.material} ({filament.color})"
             self.filament_listbox.insert(tk.END, display)
             self.filament_combo['values'] = tuple(list(self.filament_combo['values']) + [display])
         
-        self.status_label.config(text=f"Loaded {len(self.filaments)} filament(s)")
+        count = len(self.filaments)
+        self.status_label.config(text=f"Loaded {count} filament{'s' if count != 1 else ''}")
     
     def add_filament(self):
         """Add a new filament"""
-        dialog = FilamentDialog(self.root, "Add New Filament")
+        dialog = FilamentDialog(self.root, "Add New Filament", currency_symbol=self.settings.currency_symbol)
         self.root.wait_window(dialog)
         
         if dialog.result:
@@ -623,12 +845,13 @@ class CostCalculatorApp:
                 material=dialog.result['material'],
                 color=dialog.result['color'],
                 weight_grams=dialog.result['weight_grams'],
-                cost=dialog.result['cost']
+                cost=dialog.result['cost'],
+                currency=self.settings.currency_symbol
             )
             self.filaments.append(filament)
             self.update_filament_list()
             self.save_data()
-            self.status_label.config(text=f"Added filament: {filament.name}")
+            self.status_label.config(text=f"Added: {filament.name}")
     
     def edit_filament(self):
         """Edit selected filament"""
@@ -637,10 +860,8 @@ class CostCalculatorApp:
             messagebox.showwarning("Warning", "Please select a filament to edit")
             return
         
-        index = selection[0]
-        filament = self.filaments[index]
-        
-        dialog = FilamentDialog(self.root, "Edit Filament", filament)
+        filament = self.filaments[selection[0]]
+        dialog = FilamentDialog(self.root, "Edit Filament", filament, self.settings.currency_symbol)
         self.root.wait_window(dialog)
         
         if dialog.result:
@@ -649,38 +870,28 @@ class CostCalculatorApp:
             filament.color = dialog.result['color']
             filament.weight_grams = dialog.result['weight_grams']
             filament.cost = dialog.result['cost']
+            filament.currency = self.settings.currency_symbol
             
             self.update_filament_list()
             self.save_data()
-            self.status_label.config(text=f"Updated filament: {filament.name}")
+            self.status_label.config(text=f"Updated: {filament.name}")
     
-    def remove_filament(self):
-        """Remove selected filament"""
+    def delete_filament(self):
+        """Delete selected filament"""
         selection = self.filament_listbox.curselection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a filament to remove")
+            messagebox.showwarning("Warning", "Please select a filament to delete")
             return
         
-        index = selection[0]
-        filament = self.filaments[index]
-        
-        if messagebox.askyesno("Confirm", f"Remove filament '{filament.name}'?"):
-            del self.filaments[index]
+        filament = self.filaments[selection[0]]
+        if messagebox.askyesno("Confirm Delete", f"Delete '{filament.name}'?"):
+            self.filaments.pop(selection[0])
             self.update_filament_list()
             self.save_data()
-            self.status_label.config(text=f"Removed filament: {filament.name}")
-    
-    def on_filament_selected(self, event=None):
-        """Handle filament selection in combo box"""
-        selection = self.filament_combo.current()
-        if selection >= 0 and selection < len(self.filaments):
-            filament = self.filaments[selection]
-            info = (f"Price: {filament.price_per_gram:.4f} PLN/g\n"
-                   f"Spool: {filament.weight_grams}g for {filament.cost:.2f} PLN")
-            self.filament_info_label.config(text=info)
+            self.status_label.config(text=f"Deleted: {filament.name}")
     
     def open_settings(self):
-        """Open printer settings dialog"""
+        """Open settings dialog"""
         dialog = SettingsDialog(self.root, "Printer Settings", self.settings)
         self.root.wait_window(dialog)
         
@@ -688,90 +899,92 @@ class CostCalculatorApp:
             self.settings = dialog.result
             self.save_data()
             self.status_label.config(text="Settings updated")
-            
-            # Recalculate if there's a current job
-            if self.current_job:
-                self.calculate_cost()
     
     def calculate_cost(self):
-        """Calculate print job cost"""
-        # Validate inputs
+        """Calculate print cost"""
         try:
-            filament_idx = self.filament_combo.current()
-            if filament_idx < 0:
+            job_name = self.job_name_var.get().strip() or "Unnamed Print"
+            filament_name = self.filament_var.get()
+            
+            if not filament_name:
                 messagebox.showwarning("Warning", "Please select a filament")
                 return
             
-            print_time = float(self.print_time_var.get() or 0)
-            filament_used = float(self.filament_used_var.get() or 0)
-            support = float(self.support_var.get() or 0)
+            # Find selected filament
+            filament = None
+            for f in self.filaments:
+                display = f"{f.name} - {f.material} ({f.color})"
+                if display == filament_name:
+                    filament = f
+                    break
             
-            if print_time <= 0:
-                messagebox.showwarning("Warning", "Print time must be greater than 0")
+            if not filament:
+                messagebox.showerror("Error", "Selected filament not found")
                 return
             
-            if filament_used <= 0 and support <= 0:
-                messagebox.showwarning("Warning", "Filament usage must be greater than 0")
-                return
+            print_time = float(self.time_var.get())
+            filament_used = float(self.weight_var.get())
+            supports = float(self.support_var.get())
             
-        except ValueError:
-            messagebox.showerror("Error", "Invalid number format in inputs")
-            return
-        
-        # Create and calculate job
-        filament = self.filaments[filament_idx]
-        self.current_job = PrintJob(filament, self.settings)
-        self.current_job.job_name = self.job_name_var.get().strip() or "Unnamed Job"
-        self.current_job.print_time_hours = print_time
-        self.current_job.filament_used_grams = filament_used
-        self.current_job.support_grams = support
-        
-        breakdown = self.current_job.calculate()
-        
-        # Display results
-        self.display_results(breakdown)
-        self.status_label.config(text=f"Calculated: {self.current_job.job_name}")
+            if print_time < 0 or filament_used < 0 or supports < 0:
+                raise ValueError("Negative values not allowed")
+            
+            # Create and calculate job
+            self.current_job = PrintJob(filament, self.settings)
+            self.current_job.job_name = job_name
+            self.current_job.print_time_hours = print_time
+            self.current_job.filament_used_grams = filament_used
+            self.current_job.support_grams = supports
+            
+            breakdown = self.current_job.calculate()
+            
+            # Display results
+            self.display_results(breakdown, job_name, filament)
+            
+        except ValueError as e:
+            messagebox.showerror("Error", f"Invalid input: {str(e)}")
     
-    def display_results(self, breakdown: dict):
+    def display_results(self, breakdown: dict, job_name: str, filament: Filament):
         """Display calculation results"""
-        self.results_text.delete(1.0, tk.END)
+        cur = self.format_currency
         
-        result = f"""
-{'='*50}
-PRINT JOB COST ANALYSIS
-{'='*50}
+        results = f"""
+╔══════════════════════════════════════════╗
+║  📋 COST BREAKDOWN: {job_name[:30]:<30} ║
+╠══════════════════════════════════════════╣
 
-📦 MATERIAL COSTS
-─────────────────────────────────────────
-Base filament used:     {breakdown['base_filament_grams']:>10.2f} g
-With purge ({breakdown['purge_added_percent']:>4.1f}%):      {breakdown['with_purge_grams']:>10.2f} g
-With failures ({breakdown['failure_rate_percent']:>4.1f}%):   {breakdown['with_failure_grams']:>10.2f} g
-─────────────────────────────────────────
-Material Cost:          {breakdown['material_cost']:>10.2f} PLN
+🧵 FILAMENT INFO
+   Name: {filament.name}
+   Material: {filament.material}
+   Price: {cur(filament.price_per_gram)}/g
 
-⏱️  MACHINE COSTS
-─────────────────────────────────────────
-Machine Amortization:   {breakdown['machine_amortization']:>10.2f} PLN
-Parts Replacement:      {breakdown['machine_parts']:>10.2f} PLN
-─────────────────────────────────────────
-Total Machine Cost:     {(breakdown['machine_amortization'] + breakdown['machine_parts']):>10.2f} PLN
+📊 MATERIAL USAGE
+   Base filament: {breakdown['base_filament_grams']:.1f}g
+   With purge (+{breakdown['purge_added_percent']:.0f}%): {breakdown['with_purge_grams']:.1f}g
+   With failure rate (+{breakdown['failure_rate_percent']:.0f}%): {breakdown['with_failure_grams']:.1f}g
+   
+   💰 Material Cost: {cur(breakdown['material_cost'])}
 
-⚡ ENERGY COSTS
-─────────────────────────────────────────
-Energy Cost:            {breakdown['energy_cost']:>10.2f} PLN
+⏱️ MACHINE COSTS
+   Amortization: {cur(breakdown['machine_amortization'])}
+   Parts (nozzle, etc.): {cur(breakdown['machine_parts'])}
+   
+   🔧 Total Machine: {cur(breakdown['machine_amortization'] + breakdown['machine_parts'])}
 
-🔧 OTHER COSTS
-─────────────────────────────────────────
-Post-processing:        {breakdown['post_processing']:>10.2f} PLN
+⚡ ENERGY
+   💡 Energy Cost: {cur(breakdown['energy_cost'])}
 
-{'='*50}
-💰 TOTAL COST:           {breakdown['total']:>10.2f} PLN
-{'='*50}
+🎨 POST-PROCESSING
+   Cost: {cur(breakdown['post_processing'])}
 
-📊 COST PER GRAM (final): {breakdown['total'] / breakdown['with_failure_grams']:.4f} PLN/g
+╠══════════════════════════════════════════╣
+║  💵 TOTAL COST: {cur(breakdown['total']):>20} ║
+╚══════════════════════════════════════════╝
 """
         
-        self.results_text.insert(tk.END, result)
+        self.results_text.delete(1.0, tk.END)
+        self.results_text.insert(1.0, results)
+        self.status_label.config(text=f"Calculated: {job_name}")
     
     def save_data(self):
         """Save data to JSON file"""
@@ -784,6 +997,7 @@ Post-processing:        {breakdown['post_processing']:>10.2f} PLN
             
             with open(self.DATA_FILE, 'w') as f:
                 json.dump(data, f, indent=2)
+                
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save data: {str(e)}")
     
@@ -799,7 +1013,11 @@ Post-processing:        {breakdown['post_processing']:>10.2f} PLN
                 if 'settings' in data:
                     self.settings = PrinterSettings.from_dict(data['settings'])
                 
-                self.status_label.config(text=f"Loaded {len(self.filaments)} filament(s) from saved data")
+                self.update_filament_list()
+                self.status_label.config(text=f"Loaded {len(self.filaments)} filament(s)")
+            else:
+                self.status_label.config(text="Welcome! Add your first filament.")
+                
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load data: {str(e)}")
             self.status_label.config(text="Started with empty data")
@@ -814,13 +1032,13 @@ def main():
     """Main entry point"""
     root = tk.Tk()
     
-    # Set theme
-    style = ttk.Style()
-    style.theme_use('clam')
-    
-    # Configure colors
-    style.configure('Title.TLabel', font=('Segoe UI', 14, 'bold'))
-    style.configure('Header.TLabel', font=('Segoe UI', 11, 'bold'))
+    # Center window on screen
+    root.update_idletasks()
+    width = 1100
+    height = 750
+    x = (root.winfo_screenwidth() // 2) - (width // 2)
+    y = (root.winfo_screenheight() // 2) - (height // 2)
+    root.geometry(f'{width}x{height}+{x}+{y}')
     
     app = CostCalculatorApp(root)
     root.mainloop()

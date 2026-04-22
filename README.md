@@ -1,172 +1,135 @@
-# 3D Print Cost Calculator
+# 🖨️ 3D Print Cost Calculator
 
-A Windows desktop application for calculating 3D printing costs with detailed breakdown of material, machine, energy, and other costs.
+A modern Windows desktop application for calculating 3D printing costs with a beautiful dark theme UI.
 
-## Features
+## ✨ Features
 
-### Filament Management
-- **Add filaments** with custom properties:
-  - Name (e.g., "Bambu Lab PETG Basic")
-  - Material type (PLA, PETG, ABS, ASA, TPU, NYLON, PC, PVA, HIPS, OTHER)
-  - Color
-  - Weight (grams)
-  - Cost (PLN)
-- **Edit existing filaments**
-- **Remove filaments** from your collection
-- Automatic calculation of price per gram
+### 🧵 Filament Management
+- Add, edit, and remove filaments
+- Track filament name, material type, color, weight, and cost
+- Automatic price per gram calculation
+- Support for: PLA, PETG, ABS, ASA, TPU, NYLON, PC, PVA, HIPS
 
-### Printer Settings
-Configure your printer's operational costs:
+### ⚙️ Comprehensive Cost Calculation
 
-#### Printer Tab
-- Printer name
-- Printer purchase cost (for amortization)
-- Expected lifetime in hours
-- Simple hourly rate option (alternative to detailed calculation)
-- Toggle between simple and detailed cost calculation
+**1. Material Costs**
+- Base filament cost from slicer data
+- Configurable purge/waste percentage (for tests, supports, purge, failed starts)
+- Failure rate consideration
 
-#### Energy & Parts Tab
-- Average power consumption (Watts)
-- Energy cost per kWh (PLN)
-- Nozzle cost
-- Nozzle lifetime in hours
+**2. Machine Costs**
+- Printer amortization (based on printer cost and lifetime hours)
+- Parts replacement (nozzle, belts, hotend)
+- Optional simple hourly rate mode
 
-#### Waste & Other Tab
-- **Purge/Waste percentage** - Extra material for purge, tests, and failed starts
-- **Failure rate percentage** - Account for completely failed prints
-- Post-processing costs (support removal, sanding, etc.)
+**3. Energy Costs** (optional)
+- Based on average power consumption (watts)
+- Configurable energy price per kWh
+- Calculated from print duration
 
-### Cost Calculation
-Enter your print job details:
-- Job name
-- Select filament from your collection
-- Print time (hours)
-- Filament used (from slicer - Bambu Studio, PrusaSlicer, etc.)
-- Support material weight
+**4. Additional Costs**
+- Post-processing costs
+- Customizable failure rate percentage
 
-### Detailed Cost Breakdown
-The calculator provides:
+### 💱 Currency Support
+- Customizable currency symbol (PLN, USD, EUR, GBP, etc.)
+- Choose symbol position (before or after amount)
+- Live preview in settings
 
-1. **Material Costs**
-   - Base filament used
-   - Added purge/waste percentage
-   - Failure rate compensation
-   - Total material cost
+### 🎨 Modern UI
+- Dark theme with Catppuccin-inspired colors
+- Clean, intuitive interface
+- Tabbed settings dialog
+- Formatted cost breakdown display
 
-2. **Machine Costs**
-   - Printer amortization (based on purchase price and lifetime)
-   - Parts replacement (nozzle wear)
+### 💾 Data Persistence
+- All filaments and settings saved automatically
+- JSON-based storage
+- Auto-load on startup
 
-3. **Energy Costs**
-   - Based on power consumption and local energy rates
-
-4. **Other Costs**
-   - Post-processing expenses
-
-5. **Total Cost** with cost per gram
-
-## Installation
+## 📦 Installation
 
 ### Requirements
-- Python 3.7 or higher
+- Python 3.8 or higher
 - tkinter (usually included with Python on Windows)
 
 ### Running the Application
 
-1. Make sure Python is installed on your system
-2. Navigate to the application directory
-3. Run:
-   ```bash
-   python print_cost_calculator.py
-   ```
+```bash
+python print_cost_calculator.py
+```
 
-### Creating a Standalone Executable (Optional)
+### Creating Standalone .exe (Optional)
 
-To create a .exe file that can run without Python:
+```bash
+pip install pyinstaller
+pyinstaller --onefile --windowed --name "3DPrintCostCalculator" print_cost_calculator.py
+```
 
-1. Install PyInstaller:
-   ```bash
-   pip install pyinstaller
-   ```
+The executable will be in the `dist` folder.
 
-2. Create executable:
-   ```bash
-   pyinstaller --onefile --windowed --name="3D_Print_Cost_Calculator" print_cost_calculator.py
-   ```
+## 📖 Usage
 
-3. Find your executable in the `dist` folder
+### First Setup
 
-## Usage Guide
+1. Launch the application
+2. Click **⚙️ Settings** to configure:
+   - Printer name, cost, and lifetime hours
+   - Energy consumption (watts) and cost per kWh
+   - Nozzle cost and lifetime
+   - **Purge/Waste %** - extra material for purge, tests, failed starts
+   - Failure rate %
+   - Currency symbol and position
 
-### First Time Setup
+### Adding Filaments
 
-1. **Add Your Filaments**
-   - Click "Add Filament"
-   - Enter filament details (name, material, color, weight, cost)
-   - Save
+1. Click **+ Add Filament**
+2. Enter: Name, Material, Color, Weight (g), Cost
+3. Click **Save**
 
-2. **Configure Printer Settings**
-   - Click "⚙ Printer Settings"
-   - Enter your printer information
-   - Set purge percentage (recommended: 5-15%)
-   - Set failure rate based on your experience (recommended: 3-10%)
-   - Save settings
+### Calculating Print Cost
 
-### Calculating a Print Cost
+1. Select a filament from the dropdown
+2. Enter: Job name, Print time (hours), Filament used (g), Supports (g)
+3. Click **📊 Calculate Cost**
 
-1. Enter a job name (optional)
-2. Select the filament you'll use
-3. Enter print time from your slicer
-4. Enter filament usage from your slicer (including supports if separate)
-5. Enter support material weight (if not included above)
-6. Click "📊 Calculate Cost"
+### Understanding Results
 
-### Understanding the Results
+Results show:
+- Filament info and price per gram
+- Material usage (base, with purge, with failure rate)
+- Material cost
+- Machine costs (amortization + parts)
+- Energy cost
+- Post-processing cost
+- **TOTAL COST**
 
-The results show:
-- **Base filament**: What the slicer reports
-- **With purge**: Base + purge percentage for tests/priming
-- **With failures**: Accounts for occasional failed prints
-- **Material Cost**: Final filament cost
-- **Machine Costs**: Amortization + parts
-- **Energy Cost**: Electricity consumption
-- **TOTAL**: Your complete cost
+## ⚙️ Configuration Options
 
-## Data Storage
+**Printer Tab:** Name, cost, lifetime, hourly rate option
 
-All your filaments and settings are automatically saved to `print_cost_data.json` in the same directory. The data loads automatically when you start the application.
+**Energy & Parts Tab:** Power (W), energy cost (/kWh), nozzle cost/lifetime
 
-## Example Calculation
+**Waste & Other Tab:** Purge %, failure rate %, post-processing cost
 
-For a print using PETG filament:
-- Filament: 150g used
-- Supports: 25g
-- Print time: 8 hours
-- Purge setting: 10%
-- Failure rate: 5%
+**Currency Tab:** Symbol (PLN, $, €, £) and position (before/after)
 
-The calculator will compute:
-- Base: 175g
-- With purge (10%): 192.5g
-- With failures (5%): 202.125g
-- Plus machine time, energy, and any post-processing
+## 💡 Tips
 
-## Tips
+- Export exact filament usage from Bambu Studio, PrusaSlicer, or Cura
+- Start with 10% purge, adjust based on actual waste
+- Use a power meter for accurate energy consumption
+- Update filament costs as prices change
+- Backup `print_cost_data.json` regularly
 
-1. **Accurate Slicer Data**: Use the exact filament usage from Bambu Studio or your slicer
-2. **Realistic Purge**: Add 5-15% for purge depending on your printer and filament changes
-3. **Track Failures**: Adjust failure rate based on your actual success rate
-4. **Regular Updates**: Update filament prices as you buy new spools
-5. **Multiple Profiles**: Consider different settings for different printer types
+## 🔧 Troubleshooting
 
-## Currency
+**App won't start?** Ensure Python 3.8+ and tkinter installed: `python -m tkinter`
 
-The application uses PLN (Polish Złoty) by default, but you can mentally substitute any currency - the calculations work the same way.
+**Data not saving?** Check write permissions or run as administrator
 
-## License
+**Wrong calculations?** Verify settings, filament data, and units
 
-Free to use for personal and commercial purposes.
+---
 
-## Support
-
-For issues or suggestions, please check the source code or modify as needed for your specific requirements.
+**Made with ❤️ for the 3D printing community**
