@@ -1,132 +1,113 @@
-# 🖨️ 3D Print Cost Calculator
+# 🖨️ PrintFlow Pro - 3D Printing Cost Calculator & Business Platform
 
-A modern Windows desktop application for calculating 3D printing costs with a beautiful dark theme UI.
+A **modern, premium SaaS-grade web application** for professional 3D printing businesses. Built with React, Vite, and TailwindCSS.
 
 ## ✨ Features
 
-### 🧵 Filament Management
-- Add, edit, and remove filaments
-- Track filament name, material type, color, weight, and cost
-- Automatic price per gram calculation
-- Support for: PLA, PETG, ABS, ASA, TPU, NYLON, PC, PVA, HIPS
+### 🎨 Modern UI/UX
+- Clean SaaS-style interface inspired by Stripe, Linear, Notion
+- Dark/Light mode support
+- Smooth animations and micro-interactions
+- Responsive design for all devices
 
-### ⚙️ Comprehensive Cost Calculation
+### 💰 Smart Cost Calculator
+- Real-time cost calculation
+- Material, machine, energy, and labor cost breakdown
+- Quantity-based pricing with volume discounts
+- Profit margin visualization
+- AI-powered optimization suggestions
 
-**1. Material Costs**
-- Base filament cost from slicer data
-- Configurable purge/waste percentage (for tests, supports, purge, failed starts)
+### 📦 Inventory Management
+- Track filaments by brand, type, color
+- Real-time stock updates
+- Low stock alerts
+- Hardware inventory tracking
+
+### 🖨️ Printer Profiles
+- Multiple printer profiles
+- Hourly rate, power consumption, maintenance factors
+- Efficiency and reliability tracking
+
+### 📊 Dashboard & Analytics
+- Revenue tracking
+- Quote success rate
+- Material usage charts
+- Low stock alerts
+
+### 📝 Quote Management
+- Unlimited quotes
+- Status tracking (Pending, Accepted, Rejected)
+- Search, filter, sort
+- Duplicate quotes
+
+## 🚀 Quick Start
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+## 🛠️ Tech Stack
+
+- **React 18** - UI framework
+- **Vite** - Build tool
+- **TailwindCSS** - Styling
+- **Framer Motion** - Animations
+- **Recharts** - Charts & graphs
+- **Lucide React** - Icons
+- **UUID** - Unique IDs
+
+## 📁 Project Structure
+
+```
+src/
+├── components/     # React components
+│   ├── ui.jsx      # Reusable UI components
+│   ├── Layout.jsx  # App layout with sidebar
+│   ├── Dashboard.jsx
+│   └── Calculator.jsx
+├── hooks/          # Custom React hooks
+│   └── useApp.js   # Global state management
+├── utils/          # Utility functions
+│   └── helpers.js  # Calculations & helpers
+├── styles/         # CSS styles
+│   └── globals.css
+└── main.jsx        # Entry point
+```
+
+## 💡 Key Features
+
+### Cost Calculation
+- Filament weight & support material
+- Print time estimation
+- Machine hourly rates
+- Energy consumption
+- Purge/waste percentage
 - Failure rate consideration
-
-**2. Machine Costs**
-- Printer amortization (based on printer cost and lifetime hours)
-- Parts replacement (nozzle, belts, hotend)
-- Optional simple hourly rate mode
-
-**3. Energy Costs** (optional)
-- Based on average power consumption (watts)
-- Configurable energy price per kWh
-- Calculated from print duration
-
-**4. Additional Costs**
 - Post-processing costs
-- Customizable failure rate percentage
 
-### 💱 Currency Support
-- Customizable currency symbol (PLN, USD, EUR, GBP, etc.)
-- Choose symbol position (before or after amount)
-- Live preview in settings
+### Pricing Engine
+- Configurable profit margins
+- Volume discounts (5, 10, 20, 50, 100+ units)
+- Multi-currency support
+- Tax/VAT options
 
-### 🎨 Modern UI
-- Dark theme with Catppuccin-inspired colors
-- Clean, intuitive interface
-- Tabbed settings dialog
-- Formatted cost breakdown display
+### Business Tools
+- Quote generation
+- Client management
+- Activity logging
+- Data persistence (localStorage)
 
-### 💾 Data Persistence
-- All filaments and settings saved automatically
-- JSON-based storage
-- Auto-load on startup
+## 🎯 Target Users
 
-## 📦 Installation
+Professional 3D printing businesses, maker spaces, and freelancers who need accurate cost calculations and business management tools.
 
-### Requirements
-- Python 3.8 or higher
-- tkinter (usually included with Python on Windows)
+---
 
-### Running the Application
-
-```bash
-python print_cost_calculator.py
-```
-
-### Creating Standalone .exe (Optional)
-
-```bash
-pip install pyinstaller
-pyinstaller --onefile --windowed --name "3DPrintCostCalculator" print_cost_calculator.py
-```
-
-The executable will be in the `dist` folder.
-
-## 📖 Usage
-
-### First Setup
-
-1. Launch the application
-2. Click **⚙️ Settings** to configure:
-   - Printer name, cost, and lifetime hours
-   - Energy consumption (watts) and cost per kWh
-   - Nozzle cost and lifetime
-   - **Purge/Waste %** - extra material for purge, tests, failed starts
-   - Failure rate %
-   - Currency symbol and position
-
-### Adding Filaments
-
-1. Click **+ Add Filament**
-2. Enter: Name, Material, Color, Weight (g), Cost
-3. Click **Save**
-
-### Calculating Print Cost
-
-1. Select a filament from the dropdown
-2. Enter: Job name, Print time (hours), Filament used (g), Supports (g)
-3. Click **📊 Calculate Cost**
-
-### Understanding Results
-
-Results show:
-- Filament info and price per gram
-- Material usage (base, with purge, with failure rate)
-- Material cost
-- Machine costs (amortization + parts)
-- Energy cost
-- Post-processing cost
-- **TOTAL COST**
-
-## ⚙️ Configuration Options
-
-**Printer Tab:** Name, cost, lifetime, hourly rate option
-
-**Energy & Parts Tab:** Power (W), energy cost (/kWh), nozzle cost/lifetime
-
-**Waste & Other Tab:** Purge %, failure rate %, post-processing cost
-
-**Currency Tab:** Symbol (PLN, $, €, £) and position (before/after)
-
-## 💡 Tips
-
-- Export exact filament usage from Bambu Studio, PrusaSlicer, or Cura
-- Start with 10% purge, adjust based on actual waste
-- Use a power meter for accurate energy consumption
-- Update filament costs as prices change
-- Backup `print_cost_data.json` regularly
-
-## 🔧 Troubleshooting
-
-**App won't start?** Ensure Python 3.8+ and tkinter installed: `python -m tkinter`
-
-**Data not saving?** Check write permissions or run as administrator
-
-**Wrong calculations?** Verify settings, filament data, and units
-
+Built with ❤️ for the 3D printing community

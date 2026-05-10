@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    @apply scroll-smooth;
+  }
+  
+  body {
+    @apply bg-background-primary text-text-primary antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+  
+  ::selection {
+    @apply bg-accent-glow text-white;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-background-card rounded-2xl shadow-lg border border-white/5;
+  }
+  
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-glow hover:border-accent/30 hover:-translate-y-1;
+  }
+  
+  .btn-primary {
+    @apply bg-accent hover:bg-accent-hover text-white font-semibold px-6 py-3 rounded-xl 
+           transition-all duration-200 transform hover:scale-105 active:scale-95
+           shadow-lg hover:shadow-glow;
+  }
+  
+  .btn-secondary {
+    @apply bg-background-hover hover:bg-accent/20 text-text-primary font-medium px-4 py-2 rounded-xl
+           transition-all duration-200 border border-white/10;
+  }
+  
+  .input-field {
+    @apply bg-background-secondary border border-white/10 rounded-xl px-4 py-3 
+           text-text-primary placeholder-text-muted focus:outline-none focus:border-accent 
+           focus:ring-2 focus:ring-accent/20 transition-all duration-200 w-full;
+  }
+  
+  .label {
+    @apply text-text-secondary text-sm font-medium mb-2 block;
+  }
+  
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .badge-success {
+    @apply bg-success/20 text-success;
+  }
+  
+  .badge-warning {
+    @apply bg-warning/20 text-warning;
+  }
+  
+  .badge-error {
+    @apply bg-error/20 text-error;
+  }
+  
+  .badge-info {
+    @apply bg-accent/20 text-accent-light;
+  }
+  
+  .gradient-text {
+    @apply bg-gradient-to-r from-accent to-purple-400 bg-clip-text text-transparent;
+  }
+  
+  .glass {
+    @apply bg-background-card/80 backdrop-blur-xl border border-white/10;
+  }
+}
+
+@layer utilities {
+  .animate-count-up {
+    animation: countUp 0.5s ease-out;
+  }
+  
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(99, 102, 241, 0.3) transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.3);
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.5);
+  }
+}
