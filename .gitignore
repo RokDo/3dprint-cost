@@ -1,44 +1,63 @@
 ```
-# Compiled and build artifacts
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+build/
+*.o
+*.obj
 *.pyc
 __pycache__/
 
-# Dependencies
-.venv/
-venv/
-pip-log.txt
-*.egg-info/
-
-# Logs and temp files
+# Logs
 *.log
-*.tmp
-*.swp
 
-# Environment
+# Environment variables
 .env
 .env.local
 .env.*
 
-# Editors
+# IDE specific
 .vscode/
 .idea/
 
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+
 # Coverage reports
-.coverage
-htmlcov/
 coverage/
+htmlcov/
+
+# Package lock files
+package-lock.json
+yarn.lock
 
 # Python specific
-*.pyo
-*.pyd
-*.so
-*.egg
-*.eggs
-*.dll
-*.lib
-*.so
+*.pyc
+__pycache__/
+.pytest_cache/
+.mypy_cache/
 
-# Build directories
-build/
-dist/
+# Node.js specific
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Electron specific
+electron/
+
+# Vite specific
+vite.config.js.timestamp-*
+
+# Tailwind CSS specific
+tailwind.config.js
+
 ```
